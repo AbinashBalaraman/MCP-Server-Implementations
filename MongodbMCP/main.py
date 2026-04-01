@@ -1,7 +1,10 @@
+import os
 from mcp.server.fastmcp import FastMCP
 from pymongo import MongoClient
 import requests
 from pymongo.errors import InvalidOperation
+from dotenv import load_dotenv
+load_dotenv()
 
 client = MongoClient("mongodb://localhost:27017/")
 current_db = client["car"]  # Default db
@@ -90,7 +93,7 @@ def tavily(params: dict):
     """Get data from Tavily API."""
     url = "https://api.tavily.com/search"
     headers = {
-        "Authorization": "Bearer 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",
+        "Authorization": f"Bearer {os.getenv('TAVILY_API_KEY', '')}",
         "Content-Type": "application/json"
     }
     response = requests.post(url, json=params, headers=headers)
