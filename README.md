@@ -13,7 +13,7 @@ This workspace contains distinct MCP server binaries and configuration architect
 *   `MongodbMCP/`
     *   **Functionality:** A custom MCP server acting as a secure bridge to MongoDB instances.
     *   **Capabilities:** Defines specific MCP "Tools" and "Resources" that allow connected LLMs to execute MongoDB queries, aggregate collections, and analyze document structures autonomously.
-*   `claudemcp/` / `Mcp/`
+*   `claudemcp/`
     *   **Functionality:** Configuration and integration layers designed to pair custom MCP servers with the Anthropic Claude Desktop ecosystem.
     *   **Capabilities:** Demonstrates how local LLM environments consume the MCP server specifications, exposing backend functions as native tools within the LLM chat interface.
 
