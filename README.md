@@ -1,35 +1,45 @@
 # MCP-Server-Implementations
 
-Custom Model Context Protocol (MCP) server implementations designed to establish secure, high-performance data pipelines between Large Language Models (LLMs) and local or enterprise database systems.
+Custom Model Context Protocol (MCP) server implementations that expose MongoDB database operations and Tavily web search as tools consumable by any MCP-compatible LLM client, including Claude Desktop.
 
 ## Overview
 
-The Model Context Protocol (MCP) represents a standard for connecting AI systems to local and remote data sources. This repository houses specialized MCP servers built to expose complex backend resources—specifically MongoDB instances—to LLM reasoning engines (like Claude Desktop) in a secure, format-agnostic manner. The primary engineering goal is to eliminate hardcoded REST API calls by allowing LLMs to directly and autonomously query, read, and write to backend databases through the unified MCP interface.
+The Model Context Protocol establishes a standard for connecting AI systems to local data sources and external services without requiring custom REST integrations per application. This repository contains two MCP server implementations built with `FastMCP` (stdio transport), demonstrating how to expose database operations and web search capabilities as native LLM tools. Both servers are designed to be consumed by the `ADK_Multi_Agent` system in the companion `AI-Agentic-Workflows` repository and by Claude Desktop.
 
-## Core Implementations
+## Modules
 
-This workspace contains distinct MCP server binaries and configuration architectures.
+### `MongodbMCP/`
 
-*   `MongodbMCP/`
-    *   **Functionality:** A custom MCP server acting as a secure bridge to MongoDB instances.
-    *   **Capabilities:** Defines specific MCP "Tools" and "Resources" that allow connected LLMs to execute MongoDB queries, aggregate collections, and analyze document structures autonomously.
-*   `claudemcp/`
-    *   **Functionality:** Configuration and integration layers designed to pair custom MCP servers with the Anthropic Claude Desktop ecosystem.
-    *   **Capabilities:** Demonstrates how local LLM environments consume the MCP server specifications, exposing backend functions as native tools within the LLM chat interface.
+A fully-featured FastMCP server for MongoDB. Exposes the following MCP tools:
+
+*   `list_databases`: List all databases on the connected MongoDB server.
+*   `list_collections`: List all collections within a specified database.
+*   `set_database`: Dynamically switch the active database at runtime.
+*   `set_collection`: Set the active collection within the current database.
+*   `collection_operations`: A unified CRUD tool supporting `find`, `insert`, `update`, `delete`, `count`, and `distinct` operations with query and document arguments.
+*   `tavily`: A web search tool backed by the Tavily REST API, allowing the connected LLM to perform internet searches from within the same MCP session.
+
+The server connects to a local MongoDB instance (`mongodb://localhost:27017/`) with the `car` database and `car_data` collection as defaults, switchable at runtime via `set_database` and `set_collection`.
+
+### `claudemcp/`
+
+A lightweight FastMCP server serving as the foundational starter template and integration reference for Claude Desktop MCP configuration. Contains the minimal `add` tool and commented-out MongoDB integration scaffolding showing the initial prototype before the full `MongodbMCP` server was built. The `mcp-server-basic/` subdirectory contains the minimal single-file prototype.
 
 ## Technology Stack
 
 *   **Language:** Python 3.10+
-*   **Protocols:** Model Context Protocol (MCP) Specifications
-*   **Databases:** MongoDB Core
-*   **LLM Ecosystem:** Anthropic Claude (Desktop / API)
-*   **Libraries:** `mcp-sdk` (or equivalent standard implementation), `pymongo`
+*   **Protocol:** Model Context Protocol — FastMCP (`mcp.server.fastmcp`)
+*   **Transport:** stdio (standard for Claude Desktop and ADK integrations)
+*   **Database:** MongoDB (`pymongo`)
+*   **Web Search:** Tavily REST API
+*   **Package Manager:** `uv` (pyproject.toml-based)
 
 ## Prerequisites
 
 1.  Python 3.10 or higher.
-2.  A running instance of MongoDB (Local or MongoDB Atlas).
-3.  Claude Desktop installed (if integrating directly via the Anthropic client).
+2.  A running local MongoDB instance (`mongod` on default port 27017).
+3.  Claude Desktop installed with MCP host configuration enabled (if integrating via Claude).
+4.  `uv` package manager for dependency resolution.
 
 ## Setup and Installation
 
@@ -39,35 +49,45 @@ This workspace contains distinct MCP server binaries and configuration architect
     cd MCP-Server-Implementations
     ```
 
-2.  Initialize and activate a virtual environment:
+2.  Install dependencies using `uv`:
     ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    cd MongodbMCP
+    uv sync
     ```
 
-3.  Configure Environment Variables:
-    Create a `.env` file containing your database connection strings:
+3.  Configure environment variables:
     ```env
-    MONGODB_URI="mongodb+srv://<username>:<password>@cluster.mongodb.net/"
+    MONGODB_URI="mongodb://localhost:27017/"
+    TAVILY_API_KEY="your_tavily_key_here"
     ```
 
-4.  Claude Desktop Configuration (If Applicable):
-    Update your Claude Desktop `claude_desktop_config.json` to point to the local MCP server execution path as defined in the official MCP specifications.
+4.  Claude Desktop Configuration:
+    Update your `claude_desktop_config.json` to register the MCP server:
+    ```json
+    {
+      "mcpServers": {
+        "MongodbMCP": {
+          "command": "python",
+          "args": ["path/to/MongodbMCP/main.py"]
+        }
+      }
+    }
+    ```
 
 ## Usage
 
-To run the MongoDB MCP Server as a standalone process (typically orchestrated by the LLM client):
+To start the MongoDB MCP server manually:
 
 ```bash
 cd MongodbMCP
-python server.py
+python main.py
 ```
 
-The server will initialize its `stdio` or HTTP transport layer, awaiting initialization payloads from the defined MCP client.
+The server initializes its stdio transport layer and waits for MCP initialization payloads from the connected client. It is typically spawned automatically by Claude Desktop or the ADK runtime, not run interactively.
 
 ## Security Considerations
 
-These MCP servers are designed to execute backend procedures based on natural language generation. In production environments, strict Read-Only Role-Based Access Control (RBAC) must be applied to the MongoDB connection URIs to prevent destructive operations.
+These servers execute real database operations based on LLM-generated queries. In production environments, apply strict MongoDB read-only RBAC on connection credentials and validate all `collection_operations` inputs to prevent unintended destructive operations.
 
 ## License
 
