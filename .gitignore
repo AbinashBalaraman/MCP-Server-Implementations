@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Credentials and Keys
+token.json
+credentials.json
+.env
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Dependencies
+uv.lock
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
